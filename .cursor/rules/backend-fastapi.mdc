@@ -1,0 +1,20 @@
+---
+description: Backend conventions for FastAPI, temp files, and OpenRouter usage in AgentVault.
+globs: **/*.py
+alwaysApply: false
+---
+
+# Backend (FastAPI) Conventions
+
+- Organize the backend with a clear entrypoint (e.g., `app/main.py`) and separate service modules (e.g., `vault_processor.py`).
+- When handling uploads:
+  - Accept vault zips via multipart form-data.
+  - Extract them into per-request temp directories.
+  - Clean up temp directories after processing is complete.
+- For markdown processing:
+  - Use libraries (`markdown-it-py`, `PyYAML`, `spaCy`) instead of ad-hoc regex where feasible.
+- For LLM calls via OpenRouter:
+  - Read API keys from environment variables, never from code.
+  - Implement retries and timeouts so one failed call does not hang the whole job.
+  - Log only metadata (file counts, durations), never raw note content.
+

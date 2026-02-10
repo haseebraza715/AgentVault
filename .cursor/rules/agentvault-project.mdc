@@ -1,0 +1,14 @@
+---
+description: Core AgentVault project conventions (no placeholders, testing, file size).
+alwaysApply: true
+---
+
+# AgentVault Project Conventions
+
+- Always implement real, end-to-end behavior rather than stub or placeholder code.
+- When creating new features, ensure that:
+  - The upload → process → download flow remains functional.
+  - Any new processing logic actually transforms data in a meaningful way.
+- Keep individual source files roughly within 300–500 lines where possible; refactor if they grow larger.
+- Add or update tests when changing behavior, and run them (or the app) to confirm there are no obvious errors.
+

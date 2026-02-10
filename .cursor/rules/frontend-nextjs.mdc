@@ -1,0 +1,18 @@
+---
+description: Frontend conventions for Next.js, Tailwind, and upload UX in AgentVault.
+globs: **/*.{js,jsx,ts,tsx}
+alwaysApply: false
+---
+
+# Frontend (Next.js) Conventions
+
+- Prefer TypeScript React components and hooks.
+- Use Tailwind CSS utility classes and Shadcn/Radix components for consistent UI.
+- Keep the main upload/processing experience on a dedicated dashboard page.
+- For long-running actions (vault processing), always show:
+  - Loading state (spinners, progress bars, or status text).
+  - Clear error messages when backend calls fail.
+- When integrating with the backend:
+  - Use a single configuration source for the API base URL.
+  - Handle network and parsing errors gracefully, without crashing the UI.
+
