@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "projects": [
+    {
+      "name": "agentvault-frontend",
+      "rootDirectory": "frontend",
+      "framework": "nextjs"
+    }
+  ]
+}
