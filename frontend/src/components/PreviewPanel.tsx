@@ -86,7 +86,7 @@ export default function PreviewPanel({
         </div>
       </div>
       {error ? <p className="text-sm text-[#8b2b2b]">{error}</p> : null}
-      <div className="max-h-[520px] space-y-3 overflow-auto rounded-2xl border border-[#e2d7ca] bg-[#fbf7f1] p-4 text-sm text-[#2b241e]">
+      <div className="max-h-[60vh] space-y-3 overflow-auto rounded-2xl border border-[#e2d7ca] bg-[#fbf7f1] p-3 text-sm text-[#2b241e] md:max-h-[520px] md:p-4">
         {content ? (
           sections.map((section, index) => (
             <details

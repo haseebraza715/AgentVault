@@ -12,20 +12,22 @@ export default function DownloadCard({
       <p className="text-sm text-[#5f564c]">
         Download the cleaned vault or grab the full markdown preview.
       </p>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         {enabled && zipUrl ? (
           <a
-            className="inline-flex items-center justify-center rounded-full bg-[#181512] px-5 py-2 text-sm font-medium text-white"
+            className="inline-flex w-full items-center justify-center rounded-full bg-[#181512] px-5 py-2 text-sm font-medium text-white transition hover:-translate-y-[1px] hover:bg-black sm:w-auto"
             href={zipUrl}
           >
             Download cleaned zip
           </a>
         ) : (
-          <span className="text-sm text-[#9a8878]">Zip download unavailable</span>
+          <span className="text-sm text-[#9a8878]">
+            Zip download unavailable
+          </span>
         )}
         {enabled && previewUrl ? (
           <a
-            className="inline-flex items-center justify-center rounded-full border border-[#e2d7ca] px-5 py-2 text-sm font-medium text-[#2b241e]"
+            className="inline-flex w-full items-center justify-center rounded-full border border-[#e2d7ca] bg-white px-5 py-2 text-sm font-medium text-[#2b241e] transition hover:-translate-y-[1px] hover:bg-[#fbf7f1] sm:w-auto"
             href={previewUrl}
           >
             Download preview markdown

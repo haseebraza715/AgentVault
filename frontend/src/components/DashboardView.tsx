@@ -162,40 +162,49 @@ export default function DashboardView() {
   return (
     <PageLayout>
       <StudioHero />
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <SectionCard
-          title="Upload"
-          description="Upload a vault zip to begin processing."
-        >
-          <UploadCard
-            uploading={uploading}
-            onSelectFile={setFile}
-            onUpload={handleUpload}
-            error={jobStatus?.status === "error" ? jobStatus.error : error}
-            statusText={statusText}
-          />
-        </SectionCard>
-        <SectionCard
-          title="Downloads"
-          description="Grab the cleaned vault or preview markdown when ready."
-        >
-          <DownloadCard
-            zipUrl={downloadUrl}
-            previewUrl={previewUrl}
-            enabled={jobStatus?.status === "done"}
-          />
-        </SectionCard>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
+        <div className="space-y-6">
+          <SectionCard
+            title="Upload"
+            description="Drop in a vault zip to begin a full rewrite + indexing run."
+          >
+            <UploadCard
+              uploading={uploading}
+              onSelectFile={setFile}
+              onUpload={handleUpload}
+              error={jobStatus?.status === "error" ? jobStatus.error : error}
+              statusText={statusText}
+            />
+          </SectionCard>
+          <SectionCard
+            title="Preview"
+            description="Skim the stitched markdown preview before you download anything."
+          >
+            <PreviewPanel
+              previewUrl={previewUrl}
+              enabled={jobStatus?.status === "done"}
+            />
+          </SectionCard>
+        </div>
+        <div className="space-y-6">
+          <SectionCard
+            title="Downloads"
+            description="Grab the cleaned vault and preview markdown when it’s ready."
+          >
+            <DownloadCard
+              zipUrl={downloadUrl}
+              previewUrl={previewUrl}
+              enabled={jobStatus?.status === "done"}
+            />
+          </SectionCard>
+          <SectionCard
+            title="Backend health"
+            description="Quick view of whether the AgentVault backend is reachable."
+          >
+            <FooterStatus status={health.status} />
+          </SectionCard>
+        </div>
       </div>
-      <SectionCard
-        title="Preview"
-        description="View the full markdown preview in your browser."
-      >
-        <PreviewPanel
-          previewUrl={previewUrl}
-          enabled={jobStatus?.status === "done"}
-        />
-      </SectionCard>
-      <FooterStatus status={health.status} />
     </PageLayout>
   );
 }
