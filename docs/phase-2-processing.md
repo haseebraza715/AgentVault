@@ -1,8 +1,8 @@
 ```mermaid
 flowchart LR
   %% Phase 2 - System Overview
-  U[User] --> FE[Frontend (Progress UI)]
-  FE --> BE[Backend (Job Queue)]
+  U[User] --> FE["Frontend (Progress UI)"]
+  FE --> BE["Backend (Job Queue)"]
   BE --> VP[Vault Processor]
   VP --> FS[Temp Storage]
 ```

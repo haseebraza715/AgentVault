@@ -1,8 +1,8 @@
 ```mermaid
 flowchart LR
   %% Phase 1 - System Overview
-  U[User] --> FE[Frontend (Upload UI)]
-  FE --> BE[Backend (Upload/Download API)]
+  U[User] --> FE["Frontend (Upload UI)"]
+  FE --> BE["Backend (Upload/Download API)"]
   BE --> FS[Temp Storage]
 ```
 

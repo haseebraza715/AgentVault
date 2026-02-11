@@ -1,8 +1,8 @@
 ```mermaid
 flowchart LR
   %% Phase 0 - System Overview
-  U[User] --> FE[Frontend (Next.js)]
-  FE --> BE[Backend (FastAPI)]
+  U[User] --> FE["Frontend (Next.js)"]
+  FE --> BE["Backend (FastAPI)"]
 ```
 
 ```mermaid

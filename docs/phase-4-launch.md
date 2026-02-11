@@ -1,8 +1,8 @@
 ```mermaid
 flowchart LR
   %% Phase 4 - System Overview
-  U[User] --> FE[Frontend (Landing + Feedback)]
-  FE --> BE[Backend (Feedback + Metrics)]
+  U[User] --> FE["Frontend (Landing + Feedback)"]
+  FE --> BE["Backend (Feedback + Metrics)"]
   FE --> ASSET[Launch Assets]
 ```
 
