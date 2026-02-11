@@ -1,5 +1,5 @@
-app = "agentvault-backend"
-primary_region = "iad"
+app = "agentvault"
+primary_region = "bud"
 
 [build]
   dockerfile = "Dockerfile"
