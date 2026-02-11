@@ -28,3 +28,19 @@ h2,
 h3 {
   font-family: var(--font-display), "Times New Roman", serif;
 }
+
+/* Preview syntax highlighting */
+pre code.hljs {
+  display: block;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #1c1a17;
+  color: #f4f1eb;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+
+code.hljs {
+  background: #1c1a17;
+  color: #f4f1eb;
+}

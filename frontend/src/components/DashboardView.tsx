@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PageLayout from "@/components/PageLayout";
 import SectionCard from "@/components/SectionCard";
 import UploadCard from "@/components/UploadCard";
@@ -10,6 +10,7 @@ import StudioHero from "@/components/StudioHero";
 import PreviewPanel from "@/components/PreviewPanel";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const STORAGE_KEY = "agentvault:lastJob";
 
 type HealthState = {
   status: string;
@@ -23,6 +24,11 @@ type JobStatus = {
   error?: string | null;
 };
 
+type StoredJob = {
+  vaultId: string;
+  status: JobStatus;
+};
+
 export default function DashboardView() {
   const [health, setHealth] = useState<HealthState>({ status: "loading" });
   const [file, setFile] = useState<File | null>(null);
@@ -30,6 +36,20 @@ export default function DashboardView() {
   const [error, setError] = useState<string | null>(null);
   const [vaultId, setVaultId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as StoredJob;
+        setVaultId(parsed.vaultId);
+        setJobStatus(parsed.status);
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -65,20 +85,37 @@ export default function DashboardView() {
         const data = (await res.json()) as JobStatus;
         if (active) {
           setJobStatus(data);
+          if (data.status === "done" || data.status === "error") {
+            window.localStorage.setItem(
+              STORAGE_KEY,
+              JSON.stringify({ vaultId, status: data })
+            );
+            if (pollRef.current) {
+              clearInterval(pollRef.current);
+              pollRef.current = null;
+            }
+          }
         }
       } catch (err) {
         if (active) {
           setError((err as Error).message);
+          if (pollRef.current) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
         }
       }
     };
 
     pollStatus();
-    const interval = setInterval(pollStatus, 2000);
+    pollRef.current = setInterval(pollStatus, 2000);
 
     return () => {
       active = false;
-      clearInterval(interval);
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
     };
   }, [vaultId]);
 
@@ -91,6 +128,7 @@ export default function DashboardView() {
     setUploading(true);
     setVaultId(null);
     setJobStatus(null);
+    window.localStorage.removeItem(STORAGE_KEY);
 
     const formData = new FormData();
     formData.append("file", file);
