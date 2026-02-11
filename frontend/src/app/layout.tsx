@@ -16,6 +16,17 @@ const bodyFont = Space_Grotesk({
 export const metadata: Metadata = {
   title: "AgentVault",
   description: "Clean and structure vaults for AI agents.",
+  openGraph: {
+    title: "AgentVault",
+    description: "Clean and structure vaults for AI agents.",
+    type: "website",
+    siteName: "AgentVault",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AgentVault",
+    description: "Clean and structure vaults for AI agents.",
+  },
 };
 
 export default function RootLayout({
