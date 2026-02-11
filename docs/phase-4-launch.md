@@ -23,6 +23,6 @@ sequenceDiagram
   participant BE as Backend
   U->>FE: Open /feedback
   FE->>BE: POST /feedback
-  BE-->>FE: {status: "ok"}
+  BE-->>FE: status ok
   FE-->>U: Confirmation
 ```

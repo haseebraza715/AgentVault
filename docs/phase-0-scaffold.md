@@ -10,7 +10,7 @@ flowchart LR
   %% Phase 0 - Data Flow
   U[User] -->|HTTP| FE[Frontend]
   FE -->|HTTP /health| BE[Backend]
-  BE -->|JSON {status}| FE
+  BE -->|JSON status| FE
 ```
 
 ```mermaid
@@ -21,6 +21,6 @@ sequenceDiagram
   participant BE as Backend
   U->>FE: Open /dashboard
   FE->>BE: GET /health
-  BE-->>FE: {status: "ok"}
+  BE-->>FE: status ok
   FE-->>U: Render health status
 ```

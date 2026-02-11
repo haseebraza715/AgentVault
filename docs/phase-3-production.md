@@ -30,5 +30,5 @@ sequenceDiagram
   AUTH-->>FE: Session
   U->>FE: Upload vault
   FE->>BE: POST /upload-vault
-  BE-->>FE: {vault_id}
+  BE-->>FE: vault_id
 ```

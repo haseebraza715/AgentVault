@@ -15,8 +15,8 @@ flowchart LR
   BE -->|Unzip + Scan| FS
   BE -->|Process All Notes| VP
   VP -->|Rewrite + Entities + Index| FS
-  FE -->|GET /status/{id}| BE
-  FE -->|GET /download/{id}| BE
+  FE -->|GET /status/:id| BE
+  FE -->|GET /download/:id| BE
 ```
 
 ```mermaid
@@ -31,10 +31,10 @@ sequenceDiagram
   FE->>BE: POST /upload-vault
   BE->>FS: Extract zip
   BE->>VP: Start processing job
-  FE->>BE: GET /status/{id}
-  BE-->>FE: {processed,total,status}
+  FE->>BE: GET /status/:id
+  BE-->>FE: processed, total, status
   VP->>FS: Write rewritten notes
   VP->>FS: Write index.md and entities.md
-  FE->>BE: GET /download/{id}
+  FE->>BE: GET /download/:id
   BE-->>FE: processed zip
 ```

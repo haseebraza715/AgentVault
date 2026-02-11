@@ -13,7 +13,7 @@ flowchart LR
   FE -->|POST /upload-vault| BE
   BE -->|Unzip + Transform| FS
   BE -->|Processed Zip| BE
-  FE <-->|GET /download/{id}| BE
+  FE <-->|GET /download/:id| BE
 ```
 
 ```mermaid
@@ -27,8 +27,8 @@ sequenceDiagram
   FE->>BE: POST /upload-vault
   BE->>FS: Save zip + extract
   BE->>FS: Transform first .md
-  BE-->>FE: {vault_id}
-  FE->>BE: GET /download/{vault_id}
+  BE-->>FE: vault_id
+  FE->>BE: GET /download/vault_id
   BE-->>FE: processed zip
   FE-->>U: download file
 ```
