@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 function Glyph({ children }: { children: ReactNode }) {
-  return <span className="rounded bg-current/10 px-1 py-0.5 font-mono text-[10px] text-current/85">{children}</span>;
+  return <span className="rounded bg-current/10 px-1.5 py-0.5 font-mono text-[11px] text-current/85">{children}</span>;
 }
 
 function ActionButton({
@@ -19,7 +19,7 @@ function ActionButton({
 }) {
   if (!href) {
     return (
-      <div className="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-md border border-[#dbcdbb] bg-[#faf5ee] px-2.5 text-[11px] font-medium text-[#a29688]">
+      <div className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-md border border-[#dbcdbb] bg-[#faf5ee] px-3 text-xs font-medium text-[#a29688]">
         <Glyph>{icon}</Glyph>
         <span className="whitespace-nowrap">{label}</span>
       </div>
@@ -28,7 +28,7 @@ function ActionButton({
 
   return (
     <a
-      className={`inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold transition ${
+      className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-md px-3 text-xs font-semibold transition ${
         primary
           ? "bg-[#11100f] text-white hover:bg-[#1d1a17]"
           : "border border-[#ccb9a4] bg-white text-[#2b241e] hover:bg-[#f8f1e7]"
@@ -62,12 +62,12 @@ export default function DownloadCard({
   return (
     <div className="flex flex-col gap-2.5">
       {enabled ? (
-        <div className="rounded-lg border border-[#c8decd] bg-[#edf7f0] px-2.5 py-2 text-[11px] text-[#1f4d45]">
+        <div className="rounded-lg border border-[#c8decd] bg-[#edf7f0] px-3 py-2.5 text-xs text-[#1f4d45]">
           {noteCount ? `${noteCount} notes processed.` : "Ready."}
           {zipSizeLabel ? ` Zip: ${zipSizeLabel}.` : ""}
         </div>
       ) : (
-        <div className="rounded-lg border border-[#dccdbb] bg-[#f8f1e7] px-2.5 py-2 text-[11px] text-[#61574c]">
+        <div className="rounded-lg border border-[#dccdbb] bg-[#f8f1e7] px-3 py-2.5 text-xs text-[#61574c]">
           Upload a vault to unlock downloads.
         </div>
       )}

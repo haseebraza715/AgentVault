@@ -47,13 +47,13 @@ export default function StudioHero({
   return (
     <header className="rounded-xl border border-[#dbcdbd] bg-white px-4 py-3.5">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8b7c6d]">Studio</p>
-        <Link href="/" className="rounded-md border border-[#d9cbbd] px-2 py-0.5 text-[11px] text-[#2b241e]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#8b7c6d]">Studio</p>
+        <Link href="/" className="rounded-md border border-[#d9cbbd] px-2.5 py-1 text-xs text-[#2b241e]">
           Back to Home
         </Link>
       </div>
-      <h1 className="text-[22px] leading-tight font-semibold text-[#181512]">{copy.title}</h1>
-      <p className="mt-1 text-xs text-[#5f564c]">{copy.body}</p>
+      <h1 className="text-[25px] leading-tight font-semibold text-[#181512]">{copy.title}</h1>
+      <p className="mt-1.5 text-sm text-[#5f564c]">{copy.body}</p>
     </header>
   );
 }

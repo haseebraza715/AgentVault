@@ -13,10 +13,10 @@ export default function TopNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-2 z-20 flex items-center justify-between rounded-lg border border-[#d8cbbd] bg-white/95 px-2.5 py-1.5 backdrop-blur">
+    <nav className="sticky top-2 z-20 flex items-center justify-between rounded-lg border border-[#d8cbbd] bg-white/95 px-3 py-2 backdrop-blur">
       <Link
         href="/"
-        className="rounded-md px-1.5 py-1 text-[13px] font-semibold tracking-[0.05em] text-[#1f1a15]"
+        className="rounded-md px-1.5 py-1 text-sm font-semibold tracking-[0.05em] text-[#1f1a15]"
       >
         AgentVault
       </Link>
@@ -27,7 +27,7 @@ export default function TopNav() {
             <Link
               key={link.href}
               href={link.href}
-              className={`rounded-md px-2 py-1 text-[11px] font-medium transition ${
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
                 active
                   ? "bg-[#1f4d45] text-white"
                   : "text-[#5f564c] hover:bg-[#f4ede3]"

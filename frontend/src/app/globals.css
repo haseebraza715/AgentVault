@@ -21,8 +21,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 .skeleton {
@@ -88,7 +88,7 @@ pre code.hljs {
   border-radius: 12px;
   background: #1c1a17;
   color: #f4f1eb;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   overflow-x: auto;
 }
 

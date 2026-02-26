@@ -639,19 +639,19 @@ export default function DashboardView() {
       className={`${diffFullscreen ? "fixed inset-3 z-40 overflow-hidden rounded-lg border border-[#d8cab9] bg-white p-2.5" : "mt-3 rounded-lg border border-[#ddd1c3] bg-[#fbf8f3] p-2.5 reveal-section"}`}
     >
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="max-w-[78ch] truncate text-xs font-semibold text-[#2b241e]" title={diffData.path}>{diffData.path}</h4>
+        <h4 className="max-w-[78ch] truncate text-sm font-semibold text-[#2b241e]" title={diffData.path}>{diffData.path}</h4>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setDiffFullscreen((prev) => !prev)}
-            className="rounded-md border border-[#d1c2b2] bg-white px-2 py-0.5 text-[10px] text-[#5f564c]"
+            className="rounded-md border border-[#d1c2b2] bg-white px-2.5 py-1 text-[11px] text-[#5f564c]"
           >
             {diffFullscreen ? "Exit full screen" : "Full screen"}
           </button>
           <button
             type="button"
             onClick={() => setDiffData(null)}
-            className="rounded-md border border-[#d1c2b2] bg-white px-2 py-0.5 text-[10px] text-[#5f564c]"
+            className="rounded-md border border-[#d1c2b2] bg-white px-2.5 py-1 text-[11px] text-[#5f564c]"
           >
             Close
           </button>
@@ -660,16 +660,16 @@ export default function DashboardView() {
       <div className="grid gap-2 md:grid-cols-2">
         <div className="overflow-hidden rounded-lg border border-[#ddd1c3] bg-white">
           <div className="flex items-center justify-between border-b border-[#eee4d9] bg-[#f7f2ea] px-2 py-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8b7c6d]">Original</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8b7c6d]">Original</p>
             <button
               type="button"
               onClick={() => onCopy(diffData.original, "Original note")}
-              className="rounded-md border border-[#d6c8b8] bg-white px-2 py-0.5 text-[10px] text-[#6f6458]"
+              className="rounded-md border border-[#d6c8b8] bg-white px-2.5 py-1 text-[11px] text-[#6f6458]"
             >
               Copy
             </button>
           </div>
-          <div className="max-h-[420px] overflow-auto p-1 text-[10px] leading-relaxed">
+          <div className="max-h-[440px] overflow-auto p-1.5 text-[11px] leading-relaxed">
             {diffRows.map((row, index) => (
               <div
                 key={`left-${index}`}
@@ -681,7 +681,7 @@ export default function DashboardView() {
                       : "bg-transparent"
                 }`}
               >
-                <span className="text-[10px] text-[#9a8878]">{row.leftNo ?? ""}</span>
+                <span className="text-[11px] text-[#9a8878]">{row.leftNo ?? ""}</span>
                 <span className="whitespace-pre-wrap break-words text-[#2b241e]">
                   {row.change === "changed"
                     ? renderInlineDiff(row.leftText, row.rightText, "left")
@@ -694,16 +694,16 @@ export default function DashboardView() {
 
         <div className="overflow-hidden rounded-lg border border-[#ddd1c3] bg-white">
           <div className="flex items-center justify-between border-b border-[#eee4d9] bg-[#f7f2ea] px-2 py-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#8b7c6d]">Processed</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8b7c6d]">Processed</p>
             <button
               type="button"
               onClick={() => onCopy(diffData.processed, "Processed note")}
-              className="rounded-md border border-[#d6c8b8] bg-white px-2 py-0.5 text-[10px] text-[#6f6458]"
+              className="rounded-md border border-[#d6c8b8] bg-white px-2.5 py-1 text-[11px] text-[#6f6458]"
             >
               Copy
             </button>
           </div>
-          <div className="max-h-[420px] overflow-auto p-1 text-[10px] leading-relaxed">
+          <div className="max-h-[440px] overflow-auto p-1.5 text-[11px] leading-relaxed">
             {diffRows.map((row, index) => (
               <div
                 key={`right-${index}`}
@@ -715,7 +715,7 @@ export default function DashboardView() {
                       : "bg-transparent"
                 }`}
               >
-                <span className="text-[10px] text-[#9a8878]">{row.rightNo ?? ""}</span>
+                <span className="text-[11px] text-[#9a8878]">{row.rightNo ?? ""}</span>
                 <span className="whitespace-pre-wrap break-words text-[#2b241e]">
                   {row.change === "changed"
                     ? renderInlineDiff(row.leftText, row.rightText, "right")
@@ -818,14 +818,14 @@ export default function DashboardView() {
                 key={stat.label}
                 className="rounded-lg border border-[#dfd3c5] bg-white px-2.5 py-1.5 text-center"
               >
-                <p className={`text-lg font-semibold ${stat.color}`}>{stat.value}</p>
-                <p className="text-[10px] font-medium text-[#8b7c6d]">{stat.label}</p>
+                <p className={`text-xl font-semibold ${stat.color}`}>{stat.value}</p>
+                <p className="text-[11px] font-medium text-[#8b7c6d]">{stat.label}</p>
               </div>
             ))}
           </div>
 
           <div className="rounded-lg border border-[#dfd3c5] bg-white p-2">
-            <div className="mb-1.5 flex items-center justify-between text-[11px] text-[#6f6458]">
+            <div className="mb-1.5 flex items-center justify-between text-xs text-[#6f6458]">
               <p>Outcome distribution</p>
               <p className="tabular-nums">{reportStats.total} notes</p>
             </div>
@@ -878,7 +878,7 @@ export default function DashboardView() {
 
       {jobStatus?.status === "done" && report ? (
         <SectionCard title="Report" description="Per-note processing actions and diffs.">
-          <p className="text-xs text-[#4f453b]">{report.summary}</p>
+          <p className="text-sm text-[#4f453b]">{report.summary}</p>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <div className="flex flex-wrap gap-1.5">
@@ -887,7 +887,7 @@ export default function DashboardView() {
                   key={opt.value}
                   type="button"
                   onClick={() => setActionFilter(opt.value)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
                     actionFilter === opt.value
                       ? "bg-[#1f4d45] text-white"
                       : "border border-[#d9c8b5] bg-white text-[#5f564c] hover:bg-[#f5ede2]"
@@ -902,16 +902,16 @@ export default function DashboardView() {
               placeholder="Search by path..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="rounded-md border border-[#d8c7b4] bg-white px-2.5 py-1 text-xs text-[#2b241e] placeholder-[#b5a99a] outline-none focus:border-[#143f38]"
+              className="rounded-md border border-[#d8c7b4] bg-white px-3 py-1.5 text-xs text-[#2b241e] placeholder-[#b5a99a] outline-none focus:border-[#143f38]"
             />
-            <span className="text-xs font-semibold text-[#8b7c6d]">
+            <span className="text-sm font-semibold text-[#8b7c6d]">
               {filteredNotes.length} / {report.per_note.length} notes
             </span>
           </div>
 
           <div className="mt-2.5 max-h-[460px] overflow-auto rounded-lg border border-[#d8c7b4] bg-white">
             <div className="min-w-[720px]">
-              <table className="w-full text-left text-[11px]">
+              <table className="w-full text-left text-xs">
                 <thead className="sticky top-0 bg-[#f5eee4]">
                   <tr>
                     {[
@@ -927,7 +927,7 @@ export default function DashboardView() {
                           className="inline-flex items-center gap-1.5"
                         >
                           {head.label}
-                          <span className="text-[10px] text-[#9a8878]">
+                          <span className="text-[11px] text-[#9a8878]">
                             {sortKey === head.key ? (sortDir === "asc" ? "^" : "v") : "<>"}
                           </span>
                         </button>
@@ -951,7 +951,7 @@ export default function DashboardView() {
                             <span className="font-mono text-[12px] text-[#3f3a34]">{compactPath(note.path)}</span>
                           </td>
                           <td className="px-2.5 py-1.5">
-                            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${actionColor}`}>
+                            <span className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold ${actionColor}`}>
                               {actionLabel(note.action)}
                             </span>
                           </td>
@@ -978,7 +978,7 @@ export default function DashboardView() {
                                 handleViewDiff(note.path);
                               }}
                               disabled={diffLoadingPath === note.path}
-                              className="rounded-md border border-[#d0bda8] px-2 py-0.5 text-[10px] font-medium text-[#5f564c] transition hover:bg-[#f5ecdf] disabled:opacity-50"
+                              className="rounded-md border border-[#d0bda8] px-2.5 py-1 text-[11px] font-medium text-[#5f564c] transition hover:bg-[#f5ecdf] disabled:opacity-50"
                             >
                               {diffLoadingPath === note.path ? "..." : "View diff"}
                             </button>
@@ -987,7 +987,7 @@ export default function DashboardView() {
                         {expanded ? (
                           <tr className="border-t border-[#ebddcd] bg-[#fffaf4]">
                             <td colSpan={5} className="px-2.5 py-2">
-                              <div className="grid gap-2 text-[10px] text-[#5f564c] sm:grid-cols-2">
+                              <div className="grid gap-2 text-[11px] text-[#5f564c] sm:grid-cols-2">
                                 <div>
                                   <p className="font-semibold text-[#2b241e]">Findings</p>
                                   <p>{note.findings?.length ? note.findings.join(", ") : "None"}</p>

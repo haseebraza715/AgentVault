@@ -74,7 +74,7 @@ export default function UploadCard({
   const uploadLabel = uploading ? "Uploading..." : uploadSuccess ? "Uploaded" : "Upload and process";
 
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3">
       <div
         className={`rounded-lg border border-dashed bg-[#faf6f0] p-3 transition ${
           dragActive ? "border-[#1f4d45]" : "border-[#d9cbbd]"
@@ -86,9 +86,9 @@ export default function UploadCard({
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}
       >
-        <p className="text-xs font-semibold text-[#1f1914]">Drop vault zip</p>
-        <p className="mt-1 text-[11px] text-[#5e554b]">Drag/drop a `.zip` file or select manually.</p>
-        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-md border border-[#cab8a2] bg-white px-2.5 py-1 text-[11px] font-medium text-[#2b241e] hover:bg-[#f8f0e5]">
+        <p className="text-sm font-semibold text-[#1f1914]">Drop vault zip</p>
+        <p className="mt-1 text-xs text-[#5e554b]">Drag/drop a `.zip` file or select manually.</p>
+        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-md border border-[#cab8a2] bg-white px-3 py-1.5 text-xs font-medium text-[#2b241e] hover:bg-[#f8f0e5]">
           Select file
           <input
             type="file"
@@ -100,16 +100,16 @@ export default function UploadCard({
       </div>
 
       {fileMeta ? (
-        <div className="rounded-lg border border-[#d9c9b8] bg-white px-2.5 py-2">
+        <div className="rounded-lg border border-[#d9c9b8] bg-white px-3 py-2.5">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-[#2b241e]" title={fileMeta.name}>{fileMeta.name}</p>
-              <p className="text-[11px] text-[#6f6255]">{fileMeta.size}</p>
+              <p className="text-xs text-[#6f6255]">{fileMeta.size}</p>
             </div>
             <button
               type="button"
               onClick={() => pickFile(null)}
-              className="rounded-md border border-[#d9cab7] px-2 py-1 text-[11px] text-[#6f6458] hover:bg-[#f5efe5]"
+              className="rounded-md border border-[#d9cab7] px-2.5 py-1 text-xs text-[#6f6458] hover:bg-[#f5efe5]"
             >
               Remove
             </button>
@@ -122,17 +122,17 @@ export default function UploadCard({
           type="button"
           onClick={onUpload}
           disabled={uploading || processing || !fileMeta?.valid}
-          className="inline-flex min-w-[148px] items-center justify-center gap-2 rounded-md bg-[#1f4d45] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#173a34] disabled:cursor-not-allowed disabled:opacity-55"
+          className="inline-flex min-w-[158px] items-center justify-center gap-2 rounded-md bg-[#1f4d45] px-3 py-2 text-xs font-semibold text-white hover:bg-[#173a34] disabled:cursor-not-allowed disabled:opacity-55"
         >
           {uploading ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : null}
           <span>{uploadLabel}</span>
         </button>
-        {statusText ? <span className="rounded-full bg-[#efe6db] px-2 py-0.5 text-[10px] text-[#6f6458]">{statusText}</span> : null}
+        {statusText ? <span className="rounded-full bg-[#efe6db] px-2.5 py-1 text-[11px] text-[#6f6458]">{statusText}</span> : null}
       </div>
 
-      {processing ? <p className="text-[10px] text-[#1f4d45]">Processing in progress.</p> : null}
-      {localError ? <p className="text-[11px] text-[#8b2b2b]">{localError}</p> : null}
-      {error ? <p className="text-[11px] text-[#8b2b2b]">{error}</p> : null}
+      {processing ? <p className="text-[11px] text-[#1f4d45]">Processing in progress.</p> : null}
+      {localError ? <p className="text-xs text-[#8b2b2b]">{localError}</p> : null}
+      {error ? <p className="text-xs text-[#8b2b2b]">{error}</p> : null}
     </div>
   );
 }

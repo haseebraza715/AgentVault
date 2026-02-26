@@ -74,16 +74,16 @@ export default function PreviewPanel({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5f564c]">Preview</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#5f564c]">Preview</p>
         <div className="flex items-center gap-2">
           {loading ? (
-            <span className="text-[10px] text-[#6f6458]">Loading...</span>
+            <span className="text-[11px] text-[#6f6458]">Loading...</span>
           ) : null}
           {content ? (
             <button
               type="button"
               onClick={() => setExpandAll((prev) => !prev)}
-              className="rounded-md border border-[#d9cbbd] bg-white px-2 py-0.5 text-[10px] text-[#2b241e]"
+              className="rounded-md border border-[#d9cbbd] bg-white px-2.5 py-1 text-[11px] text-[#2b241e]"
             >
               {expandAll ? "Collapse all" : "Expand all"}
             </button>
@@ -91,15 +91,15 @@ export default function PreviewPanel({
         </div>
       </div>
       {error ? <p className="text-xs text-[#8b2b2b]">{error}</p> : null}
-      <div className={`max-h-[460px] space-y-2 overflow-auto rounded-lg border border-[#e2d7ca] bg-[#fbf7f1] p-2.5 text-xs text-[#2b241e] transition ${content ? "opacity-100" : "opacity-85"}`}>
+      <div className={`max-h-[480px] space-y-2 overflow-auto rounded-lg border border-[#e2d7ca] bg-[#fbf7f1] p-3 text-sm text-[#2b241e] transition ${content ? "opacity-100" : "opacity-85"}`}>
         {content ? (
           sections.map((section, index) => (
             <details
               key={`${section.title}-${index}`}
               open={expandAll}
-              className="rounded-lg border border-[#e2d7ca] bg-white p-2"
+              className="rounded-lg border border-[#e2d7ca] bg-white p-2.5"
             >
-              <summary className="cursor-pointer text-[11px] font-semibold text-[#1b1714]">
+              <summary className="cursor-pointer text-xs font-semibold text-[#1b1714]">
                 {section.title}
               </summary>
               <div className="mt-1.5">
@@ -116,8 +116,8 @@ export default function PreviewPanel({
           ))
         ) : (
           <div className="rounded-lg border border-dashed border-[#dacdbf] bg-white/70 px-2.5 py-4 text-center">
-            <p className="text-[11px] font-medium text-[#5f564c]">No preview yet</p>
-            <p className="mt-1 text-[11px] text-[#7b6f62]">Upload a vault above to generate a preview.</p>
+            <p className="text-xs font-medium text-[#5f564c]">No preview yet</p>
+            <p className="mt-1 text-xs text-[#7b6f62]">Upload a vault above to generate a preview.</p>
           </div>
         )}
       </div>

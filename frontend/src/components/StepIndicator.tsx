@@ -24,14 +24,14 @@ function isActive(step: (typeof STEP_ORDER)[number], stage: StudioStage): boolea
 
 export default function StepIndicator({ stage }: { stage: StudioStage }) {
   return (
-    <div className="grid gap-1 rounded-lg border border-[#dbcdbd] bg-white p-1.5 sm:grid-cols-3">
+    <div className="grid gap-1.5 rounded-lg border border-[#dbcdbd] bg-white p-2 sm:grid-cols-3">
       {STEP_ORDER.map((step, index) => {
         const complete = isComplete(step, stage);
         const active = isActive(step, stage);
         return (
           <div
             key={step}
-            className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] ${
+            className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs ${
               complete
                 ? "border-[#1f4d45] bg-[#ebf5f1] text-[#1f4d45]"
                 : active
@@ -40,7 +40,7 @@ export default function StepIndicator({ stage }: { stage: StudioStage }) {
             }`}
           >
             <span
-              className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[9px] font-semibold ${
+              className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold ${
                 complete ? "bg-[#1f4d45] text-white" : "border border-[#cdbda8]"
               }`}
             >
