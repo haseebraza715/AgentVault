@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f1ea;
+  --background: #f4efe6;
   --foreground: #181512;
   --surface: #ffffff;
   --muted: #6f6458;
@@ -21,12 +21,64 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-display), "Times New Roman", serif;
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #efe5d9;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.65) 50%, transparent 100%);
+  animation: shimmer 1.4s infinite;
+}
+
+.pulse-soft {
+  animation: pulse-soft 2.1s ease-in-out infinite;
+}
+
+.reveal-section {
+  animation: reveal-y 220ms ease-out;
+}
+
+::selection {
+  background: rgba(31, 77, 69, 0.22);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-soft {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes reveal-y {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Preview syntax highlighting */
@@ -36,7 +88,7 @@ pre code.hljs {
   border-radius: 12px;
   background: #1c1a17;
   color: #f4f1eb;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   overflow-x: auto;
 }
 

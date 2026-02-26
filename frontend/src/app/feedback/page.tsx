@@ -1,61 +1,109 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import PageLayout from "@/components/PageLayout";
+import SectionCard from "@/components/SectionCard";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+type SubmitState = "idle" | "success" | "error";
 
 export default function FeedbackPage() {
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<SubmitState>("idle");
+  const [statusText, setStatusText] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setStatus(null);
-    const res = await fetch(`${apiBaseUrl}/feedback`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, email: email || undefined }),
-    });
-    if (res.ok) {
-      setStatus("Thanks for the feedback.");
+    if (submitting) return;
+
+    setSubmitting(true);
+    setStatus("idle");
+    setStatusText("");
+
+    try {
+      const res = await fetch(`${apiBaseUrl}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, email: email || undefined }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      setStatus("success");
+      setStatusText("Thanks. Feedback received.");
       setMessage("");
       setEmail("");
-    } else {
-      setStatus("Failed to send feedback.");
+    } catch {
+      setStatus("error");
+      setStatusText("Could not send feedback. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
-      <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-6 py-12">
-        <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold">Feedback</h1>
-          <p className="text-zinc-600">Tell us what worked and what did not.</p>
-        </header>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <textarea
-            className="min-h-[140px] rounded-md border border-zinc-200 p-3 text-sm"
-            placeholder="Your feedback"
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            required
-          />
-          <input
-            className="rounded-md border border-zinc-200 p-3 text-sm"
-            placeholder="Email (optional)"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white"
-          >
-            Send Feedback
-          </button>
-          {status ? <p className="text-sm text-zinc-600">{status}</p> : null}
-        </form>
-      </main>
-    </div>
+    <PageLayout>
+      <SectionCard title="Feedback" description="Help improve Studio UX and backend reliability.">
+        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="space-y-2.5">
+            <Link
+              href="/studio"
+              className="inline-flex rounded-md border border-[#d9cbbd] bg-white px-2.5 py-1 text-[11px] text-[#2b241e]"
+            >
+              Back to Studio
+            </Link>
+
+            <div className="rounded-lg border border-[#ddd1c3] bg-[#fbf7f1] p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8b7c6d]">
+                Useful Details
+              </p>
+              <ul className="mt-2 space-y-1 text-[11px] text-[#5f564c]">
+                <li>What you were trying to do</li>
+                <li>What happened instead</li>
+                <li>Any error text or screenshot context</li>
+              </ul>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+            <textarea
+              className="min-h-[130px] rounded-md border border-[#d9cbbd] bg-[#fbf7f1] p-2.5 text-xs text-[#2b241e] outline-none focus:border-[#1f4d45]"
+              placeholder="Write your feedback"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              required
+            />
+            <input
+              className="rounded-md border border-[#d9cbbd] bg-white px-2.5 py-2 text-xs text-[#2b241e] outline-none focus:border-[#1f4d45]"
+              placeholder="Email (optional)"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+            <button
+              type="submit"
+              disabled={submitting || !message.trim()}
+              className="w-fit rounded-md bg-[#1f4d45] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[#173a34] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? "Sending..." : "Send feedback"}
+            </button>
+            {statusText ? (
+              <p
+                className={`text-[11px] ${
+                  status === "error" ? "text-[#8b2b2b]" : "text-[#4e463f]"
+                }`}
+              >
+                {statusText}
+              </p>
+            ) : null}
+          </form>
+        </div>
+      </SectionCard>
+    </PageLayout>
   );
 }

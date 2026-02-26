@@ -1,47 +1,138 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let size = bytes;
+  let idx = 0;
+  while (size >= 1024 && idx < units.length - 1) {
+    size /= 1024;
+    idx += 1;
+  }
+  return `${size.toFixed(size >= 100 || idx === 0 ? 0 : 1)} ${units[idx]}`;
+}
+
+function isZipFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith(".zip");
+}
+
 export default function UploadCard({
   uploading,
+  uploadSuccess,
+  selectedFile,
+  processing,
   onSelectFile,
   onUpload,
   error,
   statusText,
 }: {
   uploading: boolean;
+  uploadSuccess: boolean;
+  selectedFile: File | null;
+  processing: boolean;
   onSelectFile: (file: File | null) => void;
   onUpload: () => void;
   error?: string | null;
   statusText?: string | null;
 }) {
+  const [dragActive, setDragActive] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const fileMeta = useMemo(() => {
+    if (!selectedFile) return null;
+    return {
+      name: selectedFile.name,
+      size: formatBytes(selectedFile.size),
+      valid: isZipFile(selectedFile),
+    };
+  }, [selectedFile]);
+
+  const pickFile = (file: File | null) => {
+    if (!file) {
+      onSelectFile(null);
+      setLocalError(null);
+      return;
+    }
+    if (!isZipFile(file)) {
+      onSelectFile(null);
+      setLocalError("Only .zip files are supported.");
+      return;
+    }
+    onSelectFile(file);
+    setLocalError(null);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
+    pickFile(event.dataTransfer.files?.[0] ?? null);
+  };
+
+  const uploadLabel = uploading ? "Uploading..." : uploadSuccess ? "Uploaded" : "Upload and process";
+
   return (
-    <div className="flex flex-col gap-5">
-      <div className="rounded-3xl border border-dashed border-[#e2d7ca] bg-[#fbf7f1] p-6">
-        <p className="text-sm font-medium text-[#2b241e]">Vault zip</p>
-        <p className="text-xs text-[#6f6458]">
-          Choose a .zip of your Obsidian vault. Every note is rewritten and
-          indexed automatically.
-        </p>
-        <input
-          type="file"
-          accept=".zip"
-          onChange={(event) => onSelectFile(event.target.files?.[0] ?? null)}
-          className="mt-4 text-sm"
-        />
+    <div className="flex flex-col gap-2.5">
+      <div
+        className={`rounded-lg border border-dashed bg-[#faf6f0] p-3 transition ${
+          dragActive ? "border-[#1f4d45]" : "border-[#d9cbbd]"
+        }`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragActive(true);
+        }}
+        onDragLeave={() => setDragActive(false)}
+        onDrop={handleDrop}
+      >
+        <p className="text-xs font-semibold text-[#1f1914]">Drop vault zip</p>
+        <p className="mt-1 text-[11px] text-[#5e554b]">Drag/drop a `.zip` file or select manually.</p>
+        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-md border border-[#cab8a2] bg-white px-2.5 py-1 text-[11px] font-medium text-[#2b241e] hover:bg-[#f8f0e5]">
+          Select file
+          <input
+            type="file"
+            accept=".zip"
+            onChange={(event) => pickFile(event.target.files?.[0] ?? null)}
+            className="hidden"
+          />
+        </label>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
+
+      {fileMeta ? (
+        <div className="rounded-lg border border-[#d9c9b8] bg-white px-2.5 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-[#2b241e]" title={fileMeta.name}>{fileMeta.name}</p>
+              <p className="text-[11px] text-[#6f6255]">{fileMeta.size}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => pickFile(null)}
+              className="rounded-md border border-[#d9cab7] px-2 py-1 text-[11px] text-[#6f6458] hover:bg-[#f5efe5]"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={onUpload}
-          disabled={uploading}
-          className="inline-flex items-center justify-center rounded-full bg-[#1f4d45] px-5 py-2 text-sm font-medium text-white shadow-[0_12px_30px_rgba(17,38,33,0.25)] transition hover:-translate-y-[1px] hover:bg-[#173a34] disabled:opacity-50"
+          disabled={uploading || processing || !fileMeta?.valid}
+          className="inline-flex min-w-[148px] items-center justify-center gap-2 rounded-md bg-[#1f4d45] px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-[#173a34] disabled:cursor-not-allowed disabled:opacity-55"
         >
-          {uploading ? "Uploading..." : "Upload and process"}
+          {uploading ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : null}
+          <span>{uploadLabel}</span>
         </button>
-        {statusText ? (
-          <span className="rounded-full bg-[#efe6db] px-3 py-1 text-xs text-[#6f6458]">
-            {statusText}
-          </span>
-        ) : null}
+        {statusText ? <span className="rounded-full bg-[#efe6db] px-2 py-0.5 text-[10px] text-[#6f6458]">{statusText}</span> : null}
       </div>
-      {error ? <p className="text-sm text-[#8b2b2b]">{error}</p> : null}
+
+      {processing ? <p className="text-[10px] text-[#1f4d45]">Processing in progress.</p> : null}
+      {localError ? <p className="text-[11px] text-[#8b2b2b]">{localError}</p> : null}
+      {error ? <p className="text-[11px] text-[#8b2b2b]">{error}</p> : null}
     </div>
   );
 }
