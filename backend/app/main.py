@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from pathlib import Path
 from dotenv import load_dotenv
@@ -11,6 +11,7 @@ import uuid
 import zipfile
 import threading
 import time
+import json
 from datetime import datetime
 import logging
 
@@ -23,6 +24,7 @@ from .vault_processor import (
     write_index_files,
     write_preview_file,
 )
+from . import job_store
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
@@ -43,10 +45,12 @@ DAILY_JOB_LIMIT = int(os.getenv("DAILY_JOB_LIMIT", "20"))
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))
 JOB_TTL_MINUTES = int(os.getenv("JOB_TTL_MINUTES", "60"))
 
+# Backward-compat alias so existing tests can still import vault_store
 vault_store: dict[str, dict[str, object]] = {}
 rate_limit_window: dict[str, list[float]] = {}
 daily_job_counts: dict[str, dict[str, int]] = {}
 analytics_counts = {"uploads": 0, "downloads": 0, "feedback": 0}
+_JOB_STORE_DEGRADED = False
 
 BLOCKED_EXTENSIONS = {
     ".exe",
@@ -141,52 +145,169 @@ def mark_access(job: dict[str, object]) -> None:
     job["last_access"] = time.time()
 
 
+def _degrade_job_store(action: str, exc: Exception) -> None:
+    global _JOB_STORE_DEGRADED
+    if _JOB_STORE_DEGRADED:
+        return
+    _JOB_STORE_DEGRADED = True
+    logging.warning(
+        "Job store %s failed (%s). Falling back to in-memory store for this process.",
+        action,
+        exc,
+    )
+
+
+def _store_create_job(
+    vault_id: str,
+    temp_dir: str,
+    zip_path: str,
+    preview_path: str,
+    vault_dir: str,
+    original_vault_dir: str,
+    total: int,
+) -> None:
+    if _JOB_STORE_DEGRADED:
+        return
+    try:
+        job_store.create_job(
+            vault_id=vault_id,
+            temp_dir=temp_dir,
+            zip_path=zip_path,
+            preview_path=preview_path,
+            vault_dir=vault_dir,
+            original_vault_dir=original_vault_dir,
+            total=total,
+        )
+    except Exception as exc:  # pragma: no cover
+        _degrade_job_store("create", exc)
+
+
+def _store_get_job(vault_id: str) -> dict[str, object] | None:
+    if _JOB_STORE_DEGRADED:
+        return None
+    try:
+        return job_store.get_job(vault_id)
+    except Exception as exc:  # pragma: no cover
+        _degrade_job_store("read", exc)
+        return None
+
+
+def _store_update_job(vault_id: str, **fields: object) -> None:
+    if _JOB_STORE_DEGRADED:
+        return
+    try:
+        job_store.update_job(vault_id, **fields)
+    except Exception as exc:  # pragma: no cover
+        _degrade_job_store("update", exc)
+
+
+def _store_delete_job(vault_id: str) -> None:
+    if _JOB_STORE_DEGRADED:
+        return
+    try:
+        job_store.delete_job(vault_id)
+    except Exception as exc:  # pragma: no cover
+        _degrade_job_store("delete", exc)
+
+
+def _store_mark_access(vault_id: str) -> None:
+    if _JOB_STORE_DEGRADED:
+        return
+    try:
+        job_store.mark_access(vault_id)
+    except Exception as exc:  # pragma: no cover
+        _degrade_job_store("access mark", exc)
+
+
+def _get_job(vault_id: str) -> dict[str, object] | None:
+    """Try SQLite store first, fall back to in-memory dict for tests."""
+    job = _store_get_job(vault_id)
+    if job is not None:
+        return job
+    return vault_store.get(vault_id)
+
+
+def _delete_job(vault_id: str) -> None:
+    _store_delete_job(vault_id)
+    vault_store.pop(vault_id, None)
+
+
 def maybe_cleanup_job(vault_id: str, background_tasks: BackgroundTasks) -> None:
-    job = vault_store.get(vault_id)
+    job = _get_job(vault_id)
     if not job:
         return
     completed_at = job.get("completed_at")
-    last_access = job.get("last_access") or job.get("created_at")
     if completed_at is None:
         return
+    if job.get("downloaded_zip") and job.get("downloaded_preview"):
+        temp_dir = str(job["temp_dir"])
+        _delete_job(vault_id)
+        background_tasks.add_task(cleanup_job, temp_dir)
+        return
+    last_access = job.get("last_access") or job.get("created_at")
     idle_seconds = time.time() - float(last_access)
     ttl_seconds = JOB_TTL_MINUTES * 60
     if idle_seconds < ttl_seconds:
         return
-    temp_dir = job["temp_dir"]
-    vault_store.pop(vault_id, None)
+    temp_dir = str(job["temp_dir"])
+    _delete_job(vault_id)
     background_tasks.add_task(cleanup_job, temp_dir)
 
 
-def maybe_cleanup_job(vault_id: str, background_tasks: BackgroundTasks) -> None:
-    job = vault_store.get(vault_id)
-    if not job:
-        return
-    if job.get("downloaded_zip") and job.get("downloaded_preview"):
-        temp_dir = job["temp_dir"]
-        vault_store.pop(vault_id, None)
-        background_tasks.add_task(cleanup_job, temp_dir)
-
-
-def run_processing_job(vault_id: str, vault_dir: str, output_zip: str, preview_path: str) -> None:
+def run_processing_job(
+    vault_id: str,
+    vault_dir: str,
+    original_vault_dir: str,
+    output_zip: str,
+    preview_path: str,
+) -> None:
     def progress_cb(processed: int, total: int) -> None:
+        _store_update_job(vault_id, processed=processed, total=total)
+        # Keep in-memory dict in sync for backward compat
         job = vault_store.get(vault_id)
         if job:
             job["processed"] = processed
             job["total"] = total
 
     try:
-        result = process_vault(vault_dir, progress_cb=progress_cb)
-        write_index_files(vault_dir, result.entities)
+        started_at = datetime.utcnow().isoformat() + "Z"
+        result = process_vault(
+            vault_dir,
+            vault_id=vault_id,
+            started_at=started_at,
+            progress_cb=progress_cb,
+        )
+        write_index_files(vault_dir, result.entities, result.entity_refs)
         write_preview_file(vault_dir, preview_path)
         zip_dir(vault_dir, output_zip)
+
+        # Append report.json into the zip so it's included in the download
+        report_file = result.report_path or os.path.join(vault_dir, "report.json")
+        if os.path.exists(report_file):
+            with zipfile.ZipFile(output_zip, "a", zipfile.ZIP_DEFLATED) as zf:
+                zf.write(report_file, "report.json")
+
+        _store_update_job(
+            vault_id,
+            status="done",
+            processed=result.processed_files,
+            total=result.total_files,
+            completed_at=time.time(),
+            report_path=report_file,
+            vault_dir=vault_dir,
+            original_vault_dir=original_vault_dir,
+        )
         job = vault_store.get(vault_id)
         if job:
             job["status"] = "done"
             job["processed"] = result.processed_files
             job["total"] = result.total_files
             job["completed_at"] = time.time()
+            job["report"] = report_file
+            job["vault_dir"] = vault_dir
+            job["original_vault_dir"] = original_vault_dir
     except Exception as exc:  # pragma: no cover
+        _store_update_job(vault_id, status="error", error=str(exc))
         job = vault_store.get(vault_id)
         if job:
             job["status"] = "error"
@@ -210,12 +331,14 @@ async def upload_vault(request: Request, file: UploadFile = File(...)):
     temp_dir = tempfile.mkdtemp(prefix="agentvault_")
     upload_path = os.path.join(temp_dir, "upload.zip")
     vault_dir = os.path.join(temp_dir, "vault")
+    original_vault_dir = os.path.join(temp_dir, "original_vault")
     os.makedirs(vault_dir, exist_ok=True)
 
     with open(upload_path, "wb") as handle:
         handle.write(raw)
 
     unzip_safe(upload_path, vault_dir)
+    shutil.copytree(vault_dir, original_vault_dir, dirs_exist_ok=True)
 
     markdown_files = collect_markdown_files(vault_dir)
     if not markdown_files:
@@ -241,13 +364,26 @@ async def upload_vault(request: Request, file: UploadFile = File(...)):
         "downloaded_preview": False,
         "created_at": time.time(),
         "last_access": time.time(),
+        "vault_dir": vault_dir,
+        "original_vault_dir": original_vault_dir,
+        "report": os.path.join(vault_dir, "report.json"),
     }
+
+    _store_create_job(
+        vault_id=vault_id,
+        temp_dir=temp_dir,
+        zip_path=output_zip,
+        preview_path=preview_path,
+        vault_dir=vault_dir,
+        original_vault_dir=original_vault_dir,
+        total=len(markdown_files),
+    )
 
     analytics_counts["uploads"] += 1
 
     thread = threading.Thread(
         target=run_processing_job,
-        args=(vault_id, vault_dir, output_zip, preview_path),
+        args=(vault_id, vault_dir, original_vault_dir, output_zip, preview_path),
         daemon=True,
     )
     thread.start()
@@ -257,31 +393,33 @@ async def upload_vault(request: Request, file: UploadFile = File(...)):
 
 @app.get("/status/{vault_id}")
 def vault_status(vault_id: str):
-    job = vault_store.get(vault_id)
+    job = _get_job(vault_id)
     if not job:
         raise HTTPException(status_code=404, detail="Vault not found.")
+    _store_mark_access(vault_id)
     mark_access(job)
     return {
         "status": job["status"],
         "processed": job["processed"],
         "total": job["total"],
-        "error": job["error"],
+        "error": job.get("error"),
     }
 
 
 @app.get("/download/{vault_id}")
 def download_vault(vault_id: str, background_tasks: BackgroundTasks):
-    job = vault_store.get(vault_id)
+    job = _get_job(vault_id)
     if not job:
         raise HTTPException(status_code=404, detail="Vault not found.")
 
     if job["status"] != "done":
         raise HTTPException(status_code=409, detail="Vault not ready.")
 
-    output_zip = job["zip"]
+    output_zip = str(job["zip"])
+    _store_update_job(vault_id, downloaded_zip=True, last_access=time.time())
     job["downloaded_zip"] = True
-    analytics_counts["downloads"] += 1
     mark_access(job)
+    analytics_counts["downloads"] += 1
 
     maybe_cleanup_job(vault_id, background_tasks)
 
@@ -290,20 +428,71 @@ def download_vault(vault_id: str, background_tasks: BackgroundTasks):
 
 @app.get("/preview/{vault_id}")
 def download_preview(vault_id: str, background_tasks: BackgroundTasks):
-    job = vault_store.get(vault_id)
+    job = _get_job(vault_id)
     if not job:
         raise HTTPException(status_code=404, detail="Vault not found.")
     if job["status"] != "done":
         raise HTTPException(status_code=409, detail="Vault not ready.")
-    preview_path = job["preview"]
+    preview_path = str(job["preview"])
     if not os.path.exists(preview_path):
         raise HTTPException(status_code=404, detail="Preview not found.")
 
+    _store_update_job(vault_id, downloaded_preview=True, last_access=time.time())
     job["downloaded_preview"] = True
     mark_access(job)
     maybe_cleanup_job(vault_id, background_tasks)
 
     return FileResponse(preview_path, filename="agentvault-preview.md")
+
+
+@app.get("/report/{vault_id}")
+def report(vault_id: str):
+    job = _get_job(vault_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Vault not found.")
+    if job.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Report not ready.")
+    report_path = str(job.get("report") or job.get("report_path") or "")
+    if not report_path or not os.path.exists(report_path):
+        raise HTTPException(status_code=404, detail="Report not found.")
+    with open(report_path, "r", encoding="utf-8") as handle:
+        return JSONResponse(content=json.load(handle))
+
+
+@app.get("/diff/{vault_id}")
+def diff_note(vault_id: str, path: str):
+    job = _get_job(vault_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Vault not found.")
+    if job.get("status") != "done":
+        raise HTTPException(status_code=404, detail="Diff not ready.")
+    if not path or not path.endswith(".md"):
+        raise HTTPException(status_code=400, detail="Invalid note path.")
+    if os.path.isabs(path):
+        raise HTTPException(status_code=400, detail="Invalid note path.")
+    normalized = os.path.normpath(path)
+    if normalized.startswith("..") or ".." in normalized.split(os.sep):
+        raise HTTPException(status_code=400, detail="Invalid note path.")
+
+    original_root = str(job.get("original_vault_dir") or "")
+    processed_root = str(job.get("vault_dir") or "")
+    if not original_root or not processed_root:
+        raise HTTPException(status_code=404, detail="Diff not available.")
+    original_path = os.path.normpath(os.path.join(original_root, normalized))
+    processed_path = os.path.normpath(os.path.join(processed_root, normalized))
+    original_root_abs = os.path.abspath(original_root)
+    processed_root_abs = os.path.abspath(processed_root)
+    if not (original_path == original_root_abs or original_path.startswith(original_root_abs + os.sep)):
+        raise HTTPException(status_code=400, detail="Invalid note path.")
+    if not (processed_path == processed_root_abs or processed_path.startswith(processed_root_abs + os.sep)):
+        raise HTTPException(status_code=400, detail="Invalid note path.")
+    if not os.path.exists(original_path) or not os.path.exists(processed_path):
+        raise HTTPException(status_code=404, detail="Note not found.")
+    with open(original_path, "r", encoding="utf-8") as handle:
+        original_text = handle.read()
+    with open(processed_path, "r", encoding="utf-8") as handle:
+        processed_text = handle.read()
+    return {"path": normalized, "original": original_text, "processed": processed_text}
 
 
 @app.post("/feedback")

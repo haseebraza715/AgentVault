@@ -21,6 +21,7 @@ codex/
 # Local data/artifacts
 outputs/
 dashboard/
+backend/jobs.db
 
 # Logs
 *.log
