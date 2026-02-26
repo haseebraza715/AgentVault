@@ -22,6 +22,8 @@ codex/
 outputs/
 dashboard/
 backend/jobs.db
+backend/jobs.db-shm
+backend/jobs.db-wal
 
 # Logs
 *.log
