@@ -10,34 +10,40 @@ function ActionButton({
   label,
   onClick,
   icon,
+  className,
 }: {
   href?: string;
   primary?: boolean;
   label: string;
   onClick?: () => void;
   icon: ReactNode;
+  className?: string;
 }) {
   if (!href) {
     return (
-      <div className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-md border border-[#dbcdbb] bg-[#faf5ee] px-3 text-xs font-medium text-[#a29688]">
+      <div
+        className={`inline-flex items-center justify-center gap-2 rounded-md border border-[#dbcdbb] bg-[#faf5ee] px-3 text-xs font-medium text-[#a29688] ${
+          primary ? "min-h-[44px]" : "min-h-[40px]"
+        } ${className || ""}`}
+      >
         <Glyph>{icon}</Glyph>
-        <span className="whitespace-nowrap">{label}</span>
+        <span className="text-center leading-tight">{label}</span>
       </div>
     );
   }
 
   return (
     <a
-      className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-md px-3 text-xs font-semibold transition ${
+      className={`inline-flex items-center justify-center gap-2 rounded-md px-3 font-semibold transition ${
         primary
-          ? "bg-[#11100f] text-white hover:bg-[#1d1a17]"
-          : "border border-[#ccb9a4] bg-white text-[#2b241e] hover:bg-[#f8f1e7]"
-      }`}
+          ? "min-h-[44px] bg-[#11100f] px-4 text-sm text-white shadow-[0_1px_0_rgba(0,0,0,0.18)] hover:bg-[#1d1a17]"
+          : "min-h-[40px] border border-[#ccb9a4] bg-white text-xs text-[#2b241e] hover:bg-[#f8f1e7]"
+      } ${className || ""}`}
       href={href}
       onClick={onClick}
     >
       <Glyph>{icon}</Glyph>
-      <span className="whitespace-nowrap">{label}</span>
+      <span className="text-center leading-tight">{label}</span>
     </a>
   );
 }
@@ -72,23 +78,24 @@ export default function DownloadCard({
         </div>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2">
         <ActionButton
           href={enabled && zipUrl ? zipUrl : undefined}
           primary
-          label="Cleaned Zip"
+          className="sm:col-span-2"
+          label="Download cleaned vault (.zip)"
           icon={"ZIP"}
           onClick={() => onDownload?.("Cleaned zip download started")}
         />
         <ActionButton
           href={enabled && previewUrl ? previewUrl : undefined}
-          label="Preview MD"
+          label="Open preview"
           icon={"MD"}
           onClick={() => onDownload?.("Preview markdown download started")}
         />
         <ActionButton
           href={enabled && reportUrl ? reportUrl : undefined}
-          label="Report JSON"
+          label="Download report (JSON)"
           icon={"{}"}
           onClick={() => onDownload?.("Report download started")}
         />

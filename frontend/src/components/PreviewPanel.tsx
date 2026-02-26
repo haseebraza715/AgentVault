@@ -16,6 +16,29 @@ function splitPreview(content: string) {
     });
 }
 
+function truncatePathMiddle(path: string, maxLength = 74): string {
+  if (path.length <= maxLength) return path;
+  const normalized = path.replace(/\\/g, "/");
+  const slashIndex = normalized.lastIndexOf("/");
+  if (slashIndex < 0) {
+    const keep = Math.max(8, Math.floor((maxLength - 1) / 2));
+    return `${path.slice(0, keep)}…${path.slice(-(maxLength - keep - 1))}`;
+  }
+
+  const fileName = normalized.slice(slashIndex + 1);
+  const prefix = normalized.slice(0, slashIndex);
+  const reserved = fileName.length + 4;
+  if (reserved >= maxLength) {
+    const keep = Math.max(8, maxLength - 1);
+    return `${fileName.slice(0, keep)}…`;
+  }
+  const budget = maxLength - reserved;
+  if (prefix.length <= budget) return `${prefix}/${fileName}`;
+  const head = Math.max(8, Math.floor(budget * 0.62));
+  const tail = Math.max(6, budget - head);
+  return `${prefix.slice(0, head)}…${prefix.slice(-tail)}/${fileName}`;
+}
+
 export default function PreviewPanel({
   previewUrl,
   enabled,
@@ -74,7 +97,9 @@ export default function PreviewPanel({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#5f564c]">Preview</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#5f564c]">
+          Preview ({sections.length} notes)
+        </p>
         <div className="flex items-center gap-2">
           {loading ? (
             <span className="text-[11px] text-[#6f6458]">Loading...</span>
@@ -99,8 +124,8 @@ export default function PreviewPanel({
               open={expandAll}
               className="rounded-lg border border-[#e2d7ca] bg-white p-2.5"
             >
-              <summary className="cursor-pointer text-xs font-semibold text-[#1b1714]">
-                {section.title}
+              <summary className="cursor-pointer text-xs font-semibold text-[#1b1714]" title={section.title}>
+                {truncatePathMiddle(section.title)}
               </summary>
               <div className="mt-1.5">
                 <article className="prose prose-sm max-w-none prose-headings:text-[#1b1714] prose-p:text-[#2b241e] prose-li:text-[#2b241e] prose-strong:text-[#1b1714] prose-code:text-[#1f4d45] prose-p:my-1.5 prose-li:my-0.5">

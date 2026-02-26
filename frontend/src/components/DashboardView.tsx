@@ -40,12 +40,12 @@ type ReportNote = {
     | "fallback_sanitized"
     | "fallback_original"
     | "unchanged_original";
-  reason: string;
+  reason?: string;
   before_chars: number;
   after_chars: number;
   findings?: string[];
   requires_llm?: boolean;
-  guards_failed: string[];
+  guards_failed?: string[];
   retry_count?: number;
   chunked?: boolean;
 };
@@ -122,6 +122,69 @@ function compactPath(path: string): string {
   const head = path.slice(0, 42);
   const tail = path.slice(-24);
   return `${head}...${tail}`;
+}
+
+function truncateMiddle(text: string, maxLength = 46): string {
+  if (text.length <= maxLength) return text;
+  const head = Math.max(12, Math.floor(maxLength * 0.56));
+  const tail = Math.max(10, maxLength - head - 1);
+  return `${text.slice(0, head)}…${text.slice(-tail)}`;
+}
+
+function isChangedAction(action: ReportNote["action"]): boolean {
+  return action === "llm_rewrite" || action.startsWith("fallback");
+}
+
+function toReadableReason(raw: string): string {
+  return raw.trim().replace(/_/g, " ");
+}
+
+function reasonMeta(note: ReportNote): { short: string; full: string } {
+  const findings = note.findings ?? [];
+  const guards = note.guards_failed ?? [];
+  const rawReason = (note.reason || "").trim();
+
+  if (findings.includes("duplicate_document_removed")) {
+    return {
+      short: "sanitized (deduped)",
+      full: "sanitized (deduped)",
+    };
+  }
+
+  if (findings.includes("unbalanced_code_fence")) {
+    return {
+      short: "skipped (unbalanced code fence)",
+      full: "skipped (unbalanced code fence)",
+    };
+  }
+
+  if (note.action === "fallback_sanitized" || note.action === "fallback_original") {
+    const details = [rawReason, ...guards].filter(Boolean).map(toReadableReason);
+    const full = details.length
+      ? `fallback (failed checks: ${details.join(", ")})`
+      : "fallback (failed checks)";
+    return { short: "fallback (failed checks)", full };
+  }
+
+  if (note.action === "llm_rewrite") {
+    if (!rawReason || rawReason === "ok" || rawReason === "validated") {
+      return { short: "validated", full: "validated" };
+    }
+    return { short: toReadableReason(rawReason), full: toReadableReason(rawReason) };
+  }
+
+  if (note.action === "sanitized_only" || note.action === "unchanged_original") {
+    if (!rawReason) return { short: "skipped", full: "skipped" };
+    const readable = toReadableReason(rawReason);
+    return { short: "skipped", full: `skipped (${readable})` };
+  }
+
+  if (rawReason) {
+    const readable = toReadableReason(rawReason);
+    return { short: readable, full: readable };
+  }
+
+  return { short: "skipped", full: "skipped" };
 }
 
 function sizeDelta(note: ReportNote): number {
@@ -262,7 +325,9 @@ export default function DashboardView() {
   const [diffData, setDiffData] = useState<NoteDiff | null>(null);
   const [diffLoadingPath, setDiffLoadingPath] = useState<string | null>(null);
   const [diffFullscreen, setDiffFullscreen] = useState(false);
+  const [diffJumpIndex, setDiffJumpIndex] = useState(-1);
   const [actionFilter, setActionFilter] = useState("all");
+  const [onlyChanged, setOnlyChanged] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("action");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -274,6 +339,8 @@ export default function DashboardView() {
   const startedAtRef = useRef<number | null>(null);
   const prevStatusRef = useRef<string | null>(null);
   const toastIdRef = useRef(1);
+  const leftDiffScrollRef = useRef<HTMLDivElement | null>(null);
+  const rightDiffScrollRef = useRef<HTMLDivElement | null>(null);
 
   const dismissToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((item) => item.id !== id));
@@ -443,7 +510,9 @@ export default function DashboardView() {
     setJobStatus(null);
     setReport(null);
     setDiffData(null);
+    setDiffJumpIndex(-1);
     setActionFilter("all");
+    setOnlyChanged(false);
     setSearchQuery("");
     setExpandedRows({});
     setZipSizeLabel(null);
@@ -550,6 +619,9 @@ export default function DashboardView() {
   const filteredNotes = useMemo(() => {
     if (!report) return [];
     const filtered = report.per_note.filter((note) => {
+      if (onlyChanged && !isChangedAction(note.action)) {
+        return false;
+      }
       if (actionFilter !== "all") {
         if (actionFilter === "fallback") {
           if (!note.action.startsWith("fallback")) return false;
@@ -570,7 +642,7 @@ export default function DashboardView() {
       } else if (sortKey === "action") {
         value = ACTION_RANK[a.action] - ACTION_RANK[b.action] || a.path.localeCompare(b.path);
       } else if (sortKey === "reason") {
-        value = a.reason.localeCompare(b.reason) || a.path.localeCompare(b.path);
+        value = reasonMeta(a).short.localeCompare(reasonMeta(b).short) || a.path.localeCompare(b.path);
       } else {
         value = sizeDelta(a) - sizeDelta(b);
       }
@@ -578,7 +650,7 @@ export default function DashboardView() {
     });
 
     return sorted;
-  }, [report, actionFilter, searchQuery, sortKey, sortDir]);
+  }, [report, onlyChanged, actionFilter, searchQuery, sortKey, sortDir]);
 
   const handleViewDiff = async (notePath: string) => {
     if (!vaultId) return;
@@ -606,6 +678,57 @@ export default function DashboardView() {
     if (!diffData) return [];
     return buildDiffRows(diffData.original, diffData.processed);
   }, [diffData]);
+
+  const changedDiffRows = useMemo(
+    () =>
+      diffRows
+        .map((row, index) => (row.change === "same" ? -1 : index))
+        .filter((index) => index >= 0),
+    [diffRows],
+  );
+
+  const fallbackDiffLines = useMemo(() => {
+    if (!diffData) return [];
+    const originalLines = diffData.original.replace(/\r\n/g, "\n").split("\n");
+    const processedLines = diffData.processed.replace(/\r\n/g, "\n").split("\n");
+    const max = Math.max(originalLines.length, processedLines.length);
+    const mismatches: number[] = [];
+    for (let idx = 0; idx < max; idx += 1) {
+      if ((originalLines[idx] || "") !== (processedLines[idx] || "")) {
+        mismatches.push(idx);
+      }
+    }
+    return mismatches;
+  }, [diffData]);
+
+  const diffJumpTargets = changedDiffRows.length ? changedDiffRows : fallbackDiffLines;
+  const activeDiffRow = diffJumpIndex >= 0 ? diffJumpTargets[diffJumpIndex] : null;
+
+  useEffect(() => {
+    setDiffJumpIndex(-1);
+  }, [diffData?.path]);
+
+  const handleNextChange = useCallback(() => {
+    if (!diffJumpTargets.length) return;
+    const nextIndex = (diffJumpIndex + 1) % diffJumpTargets.length;
+    const targetRow = diffJumpTargets[nextIndex];
+    setDiffJumpIndex(nextIndex);
+
+    const scrollToTarget = (container: HTMLDivElement | null) => {
+      if (!container) return;
+      const selector = `[data-diff-row="${targetRow}"][data-diff-change="true"]`;
+      const target = container.querySelector<HTMLElement>(selector)
+        || container.querySelector<HTMLElement>(`[data-diff-row="${targetRow}"]`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        container.scrollTo({ top: Math.max(0, targetRow * 18), behavior: "smooth" });
+      }
+    };
+
+    scrollToTarget(leftDiffScrollRef.current);
+    scrollToTarget(rightDiffScrollRef.current);
+  }, [diffJumpTargets, diffJumpIndex]);
 
   const setSort = (next: SortKey) => {
     setSortKey((prevKey) => {
@@ -643,6 +766,14 @@ export default function DashboardView() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={handleNextChange}
+            disabled={!diffJumpTargets.length}
+            className="rounded-md border border-[#d1c2b2] bg-white px-2.5 py-1 text-[11px] text-[#5f564c] disabled:opacity-45"
+          >
+            Next change
+          </button>
+          <button
+            type="button"
             onClick={() => setDiffFullscreen((prev) => !prev)}
             className="rounded-md border border-[#d1c2b2] bg-white px-2.5 py-1 text-[11px] text-[#5f564c]"
           >
@@ -669,17 +800,22 @@ export default function DashboardView() {
               Copy
             </button>
           </div>
-          <div className="max-h-[440px] overflow-auto p-1.5 text-[11px] leading-relaxed">
+          <div
+            ref={leftDiffScrollRef}
+            className="max-h-[440px] overflow-auto p-1.5 text-[11px] leading-relaxed"
+          >
             {diffRows.map((row, index) => (
               <div
                 key={`left-${index}`}
+                data-diff-row={index}
+                data-diff-change={row.change === "same" ? undefined : "true"}
                 className={`grid grid-cols-[30px_1fr] gap-1.5 rounded px-1 py-0.5 font-mono ${
                   row.change === "removed"
                     ? "bg-[#f8e7e7]"
                     : row.change === "changed"
                       ? "bg-[#fff1f1]"
                       : "bg-transparent"
-                }`}
+                } ${activeDiffRow === index ? "ring-1 ring-[#c99f61]" : ""}`}
               >
                 <span className="text-[11px] text-[#9a8878]">{row.leftNo ?? ""}</span>
                 <span className="whitespace-pre-wrap break-words text-[#2b241e]">
@@ -703,17 +839,22 @@ export default function DashboardView() {
               Copy
             </button>
           </div>
-          <div className="max-h-[440px] overflow-auto p-1.5 text-[11px] leading-relaxed">
+          <div
+            ref={rightDiffScrollRef}
+            className="max-h-[440px] overflow-auto p-1.5 text-[11px] leading-relaxed"
+          >
             {diffRows.map((row, index) => (
               <div
                 key={`right-${index}`}
+                data-diff-row={index}
+                data-diff-change={row.change === "same" ? undefined : "true"}
                 className={`grid grid-cols-[30px_1fr] gap-1.5 rounded px-1 py-0.5 font-mono ${
                   row.change === "added"
                     ? "bg-[#e8f6ec]"
                     : row.change === "changed"
                       ? "bg-[#eefaf2]"
                       : "bg-transparent"
-                }`}
+                } ${activeDiffRow === index ? "ring-1 ring-[#c99f61]" : ""}`}
               >
                 <span className="text-[11px] text-[#9a8878]">{row.rightNo ?? ""}</span>
                 <span className="whitespace-pre-wrap break-words text-[#2b241e]">
@@ -807,11 +948,13 @@ export default function DashboardView() {
                 label: "Fallback",
                 value: counts.failed_validation_notes + counts.llm_error_notes,
                 color: "text-[#8a6b2c]",
+                hint: "LLM output failed quality checks, so the safe version was kept.",
               },
               {
                 label: "Stubs",
                 value: counts.stub_notes + counts.metadata_only_notes,
                 color: "text-[#6f6458]",
+                hint: "Very short or placeholder notes; not rewritten.",
               },
             ].map((stat) => (
               <div
@@ -819,7 +962,17 @@ export default function DashboardView() {
                 className="rounded-lg border border-[#dfd3c5] bg-white px-2.5 py-1.5 text-center"
               >
                 <p className={`text-xl font-semibold ${stat.color}`}>{stat.value}</p>
-                <p className="text-[11px] font-medium text-[#8b7c6d]">{stat.label}</p>
+                <p className="flex items-center justify-center gap-1 text-[11px] font-medium text-[#8b7c6d]">
+                  <span>{stat.label}</span>
+                  {stat.hint ? (
+                    <span
+                      className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[#cfbfad] text-[10px] text-[#8b7c6d]"
+                      title={stat.hint}
+                    >
+                      i
+                    </span>
+                  ) : null}
+                </p>
               </div>
             ))}
           </div>
@@ -879,6 +1032,9 @@ export default function DashboardView() {
       {jobStatus?.status === "done" && report ? (
         <SectionCard title="Report" description="Per-note processing actions and diffs.">
           <p className="text-sm text-[#4f453b]">{report.summary}</p>
+          <p className="mt-1 text-xs text-[#6f6458]">
+            All rewrites are validated. If a rewrite fails checks, we keep the safe version.
+          </p>
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <div className="flex flex-wrap gap-1.5">
@@ -896,6 +1052,17 @@ export default function DashboardView() {
                   {opt.label}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setOnlyChanged((prev) => !prev)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  onlyChanged
+                    ? "bg-[#1f4d45] text-white"
+                    : "border border-[#d9c8b5] bg-white text-[#5f564c] hover:bg-[#f5ede2]"
+                }`}
+              >
+                Only changed
+              </button>
             </div>
             <input
               type="text"
@@ -941,6 +1108,7 @@ export default function DashboardView() {
                     const delta = sizeDelta(note);
                     const actionColor = ACTION_COLORS[note.action] || "bg-[#f3f1ee] text-[#6f6458]";
                     const expanded = !!expandedRows[note.path];
+                    const reason = reasonMeta(note);
                     return (
                       <Fragment key={`${note.path}-${note.action}`}>
                         <tr
@@ -955,7 +1123,9 @@ export default function DashboardView() {
                               {actionLabel(note.action)}
                             </span>
                           </td>
-                          <td className="px-2.5 py-1.5 text-[#6f6458]">{note.reason}</td>
+                          <td className="px-2.5 py-1.5 text-[#6f6458]" title={reason.full}>
+                            {truncateMiddle(reason.short)}
+                          </td>
                           <td className="px-2.5 py-1.5 tabular-nums">
                             <span
                               className={

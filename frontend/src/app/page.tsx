@@ -2,26 +2,39 @@ import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import SectionCard from "@/components/SectionCard";
 
-const workflow = [
-  "Upload vault zip",
-  "Run guarded processing",
-  "Review report and diffs",
-  "Download cleaned output",
+const howItWorks = [
+  {
+    title: "Upload",
+    body: "Upload your Obsidian vault zip to start a processing job.",
+  },
+  {
+    title: "Repair & validate",
+    body: "Deterministic repair runs first, then guarded AI rewrite and structure checks.",
+  },
+  {
+    title: "Review diffs + download",
+    body: "Inspect per-note diffs and report details, then download the cleaned vault zip.",
+  },
 ];
 
-const features = [
-  {
-    title: "Deterministic review",
-    body: "Per-note actions, counts, and searchable report rows.",
-  },
-  {
-    title: "Safe rewriting",
-    body: "Validation guards keep links, embeds, and structure stable.",
-  },
-  {
-    title: "Fast export",
-    body: "Download cleaned zip, preview markdown, and report JSON.",
-  },
+const safetyBullets = [
+  "Preserves frontmatter, links, embeds, and code blocks",
+  "Deterministic cleaning before LLM",
+  "Quality guards with automatic fallback",
+  "Per-note report and diff viewer",
+];
+
+const outputs = [
+  "Cleaned vault zip",
+  "Preview.md",
+  "Report JSON",
+  "index.md + entities.md",
+];
+
+const trustNotes = [
+  "Structure preserved: frontmatter, wikilinks, embeds, and code fences.",
+  "Clear review path with per-note report rows and diff viewer.",
+  "Guarded processing with deterministic fallback when checks fail.",
 ];
 
 const links = [
@@ -35,62 +48,92 @@ export default function Home() {
     <PageLayout>
       <SectionCard
         title="AgentVault"
-        description="A compact workspace for vault cleanup and verification."
+        description="Safe Obsidian vault processing from upload to verified output."
       >
-        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="space-y-3">
-            <h1 className="text-[28px] leading-tight font-semibold text-[#1b1714]">
-              Process vaults with less noise and clear review
+        <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
+          <div className="max-w-2xl space-y-3">
+            <h1 className="text-[30px] leading-tight font-semibold text-[#1b1714] sm:text-[34px]">
+              Safe AI cleanup for Obsidian vaults
             </h1>
-            <p className="max-w-2xl text-sm text-[#4e463f]">
-              Upload a vault zip, run guarded processing, inspect outcomes, and
-              download clean outputs in Studio.
+            <p className="text-sm text-[#4e463f] sm:text-[15px]">
+              Deterministic fixes first, guarded AI second. Review every
+              change and download a cleaned vault.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Link
-                className="inline-flex items-center justify-center rounded-md bg-[#1f4d45] px-3.5 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center justify-center rounded-md bg-[#1f4d45] px-4 py-2 text-sm font-semibold text-white"
                 href="/studio"
               >
-                Open Studio
+                Upload vault zip
               </Link>
               <Link
-                className="inline-flex items-center justify-center rounded-md border border-[#d9cbbd] bg-white px-3.5 py-2 text-xs font-medium text-[#2b241e]"
-                href="/feedback"
+                className="inline-flex items-center justify-center rounded-md border border-[#d9cbbd] bg-white px-4 py-2 text-sm font-medium text-[#2b241e]"
+                href="#how-it-works"
               >
-                Send Feedback
+                See how it works
               </Link>
             </div>
           </div>
 
-          <div className="rounded-lg border border-[#ddd1c3] bg-[#fbf7f1] p-3">
+          <div className="rounded-lg border border-[#ddd1c3] bg-[#fbf7f1] p-3.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8b7c6d]">
-              Workflow
+              Built for trust
             </p>
-            <ol className="mt-2 space-y-1.5 text-sm text-[#4e463f]">
-              {workflow.map((step, index) => (
-                <li key={step} className="flex items-center gap-2">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#ccbda9] text-[11px] font-semibold text-[#6f6458]">
-                    {index + 1}
-                  </span>
-                  <span>{step}</span>
+            <ul className="mt-2.5 space-y-2 text-sm text-[#4e463f]">
+              {trustNotes.map((note) => (
+                <li key={note} className="flex gap-2">
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-[#8b7c6d]" />
+                  <span>{note}</span>
                 </li>
               ))}
-            </ol>
+            </ul>
           </div>
         </div>
       </SectionCard>
 
-      <SectionCard title="Highlights" description="Studio and Feedback use the same compact UI system.">
-        <div className="grid gap-2 md:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title} className="rounded-lg border border-[#e4d8cc] bg-[#fcf9f4] p-2.5">
-              <p className="text-sm font-semibold text-[#2b241e]">{feature.title}</p>
-              <p className="mt-1 text-xs text-[#6f6458]">{feature.body}</p>
+      <section id="how-it-works" className="scroll-mt-20">
+        <SectionCard title="How It Works" description="Three steps from raw vault to verified output.">
+          <div className="grid gap-2.5 md:grid-cols-3">
+            {howItWorks.map((step, index) => (
+              <div key={step.title} className="rounded-lg border border-[#e4d8cc] bg-[#fcf9f4] p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8b7c6d]">
+                  Step {index + 1}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-[#2b241e]">{step.title}</p>
+                <p className="mt-1.5 text-xs text-[#6f6458]">{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </section>
+
+      <SectionCard title="Why It’s Safe" description="Core safeguards for predictable vault cleanup.">
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {safetyBullets.map((item) => (
+            <li key={item} className="rounded-lg border border-[#e4d8cc] bg-[#fcf9f4] p-3 text-sm text-[#4e463f]">
+              {item}
+            </li>
+          ))}
+        </ul>
+      </SectionCard>
+
+      <SectionCard title="What You Get" description="Output bundle from each completed job.">
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {outputs.map((item) => (
+            <div key={item} className="rounded-lg border border-[#e4d8cc] bg-[#fcf9f4] p-3">
+              <p className="text-sm font-semibold text-[#2b241e]">{item}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <p className="mt-3 text-xs text-[#6f6458]">
+          Privacy: files are processed on our server for the active job, we do not train on your
+          data, and you should avoid uploading vaults with secrets.
+        </p>
+      </SectionCard>
+
+      <SectionCard title="Created By">
+        <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs text-[#6f6458]">Created by Haseeb Raza</p>
           {links.map((item) => (
             <a
