@@ -1,6 +1,6 @@
-# AgentVault
+# obsidian-ai-agent
 
-AgentVault processes Obsidian-style vaults (`.zip` of markdown files), rewrites notes with LLM guardrails, and provides a review-first Studio workflow before export.
+obsidian-ai-agent processes Obsidian-style vaults (`.zip` of markdown files), rewrites notes with LLM guardrails, and provides a review-first Studio workflow before export.
 
 ## Key Features
 - Upload and process a vault from the Studio interface.
